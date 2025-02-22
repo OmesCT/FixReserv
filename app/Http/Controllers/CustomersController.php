@@ -1,75 +1,39 @@
 <?php
 
 namespace App\Http\Controllers;
-
 use App\Models\Customer;
+use App\Models\Table;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
 class CustomersController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
-    public function index()
+    public function store(Request $request)
     {
-        $customers = Customer::all();
-        return Inertia::render('Dashboard', ['customers' => $customers]);
-    }
-
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
-    {
-        return Inertia::render('Create');
-    }
-
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(Request $request) {
         $request->validate([
-            'first_name' => 'required|string|max:255',
-            'last_name' => 'required|string|max:255',
-            'email' => 'required|email|unique:customers,email',
-            'phone' => 'required|string|max:20',
+            'first_name' => 'required',
+            'last_name' => 'required',
+            'email' => 'required|email',
+            'phone' => 'required',
+            'table_id' => 'required|exists:tables,id',
         ]);
-
-        Customer::create($request->all());
-
-        return redirect()->route('dashboard')->with('success', 'Customer created successfully.');
+    
+        // บันทึกข้อมูลลูกค้า
+        $customer = Customer::create([
+            'first_name' => $request->first_name,
+            'last_name' => $request->last_name,
+            'email' => $request->email,
+            'phone' => $request->phone,
+        ]);
+    
+        // อัปเดตสถานะโต๊ะว่า "ถูกจองแล้ว"
+        Table::where('id', $request->table_id)->update([
+            'available' => 0,
+            'reserved_by_user_id' => auth()->id(), // ใช้ reserved_by_user_id แทน
+        ]);
+        
+    
+        return redirect()->route('reserve.index')->with('success', 'จองโต๊ะสำเร็จ!');
     }
-
-    /**
-     * Display the specified resource.
-     */
-    public function show(Customer $customer)
-    {
-        //
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(Customer $customer)
-    {
-        //
-    }
-
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, Customer $customer)
-    {
-        //
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(Customer $customer)
-    {
-        //
-    }
+    
 }

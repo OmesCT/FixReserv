@@ -2,8 +2,9 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Tables;
+use App\Models\Table;
 use Illuminate\Http\Request;
+use Inertia\Inertia;
 
 class TablesController extends Controller
 {
@@ -12,11 +13,13 @@ class TablesController extends Controller
      */
     public function index()
     {
-        
-        return Inertia::render('Shabu/Reserve', [
-            'tables' => Table::all(), // ตรวจสอบว่า Table::all() มีข้อมูลหรือไม่
-        ]);
+        $tables = Table::all(); // ดึงข้อมูลจากฐานข้อมูล
+        return Inertia::render('Shabu/Reserve', ['tables' => $tables]);
     }
+    
+    
+    
+    
     /**
      * Show the form for creating a new resource.
      */
@@ -64,15 +67,16 @@ class TablesController extends Controller
     {
         //
     }
-    public function reserve(Request $request, Table $table)
+    public function reserve(Request $request, $id)
     {
-        if ($table->available) {
-            $table->update([
-                'available' => false,
-                'reserved_by_user_id' => auth()->id(),
-            ]);
-        }
-        return redirect()->route('tables.index');
+        $table = Table::findOrFail($id);
+        
+        // อัพเดตสถานะโต๊ะ
+        $table->update([
+            'available' => false,
+            'reserved_by_user_id' => $request->reserve_by_user_id, // หรือ user id ที่จอง
+        ]);
+        
+        return response()->json($table);
     }
-
 }
